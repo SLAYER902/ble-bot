@@ -61,10 +61,10 @@ PostgreSQL, Redis, and Lavalink use an internal Compose network. The bot also ha
 
 Create a bot application and enable these privileged intents only when used:
 
-- Server Members: required for member-oriented security correlation, welcome, and raid analysis.
+- Server Members: enable it and set `GUILD_MEMBERS_INTENT_ENABLED=true` only for member-oriented security correlation, welcome, and raid analysis.
 - Message Content: only when `MESSAGE_CONTENT_ENABLED=true`; required for message AutoMod and message features.
 
-BLE Bot requests Guilds, Guild Members, Guild Moderation, and Guild Voice States by default. Message reactions are requested only when `REACTION_FEATURES_ENABLED=true`. It does not request the Presence intent.
+BLE Bot requests Guilds, Guild Moderation, and Guild Voice States by default. Guild Members is requested only when `GUILD_MEMBERS_INTENT_ENABLED=true`; Message Content is requested only when `MESSAGE_CONTENT_ENABLED=true`; and message reactions are requested only when `REACTION_FEATURES_ENABLED=true`. It does not request the Presence intent.
 
 Invite with the `bot` and `applications.commands` scopes. Core operational permissions are View Audit Log, Manage Roles, Manage Webhooks, Manage Channels, Moderate Members, Kick Members, Ban Members, Send Messages, Embed Links, Read Message History, and Connect/Speak if voice or music modules are enabled. Put the BLE Bot role above every role it must manage; Discord does not allow it to manage users or roles above its own role, and it can never stop the server owner.
 

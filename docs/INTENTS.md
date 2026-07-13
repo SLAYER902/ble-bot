@@ -3,7 +3,7 @@
 | Capability                         | Intent                             | Status                                       |
 | ---------------------------------- | ---------------------------------- | -------------------------------------------- |
 | Slash commands and guild resources | Guilds                             | Required                                     |
-| Member-oriented security analysis  | Guild Members                      | Required for enabled core security listeners |
+| Member-oriented security analysis  | Guild Members                      | Optional; enable with `GUILD_MEMBERS_INTENT_ENABLED=true` |
 | Moderation and AutoMod events      | Guild Moderation                   | Required                                     |
 | Voice features                     | Guild Voice States                 | Enabled for voice architecture               |
 | Message scanning                   | Guild Messages and Message Content | Optional, disabled by default                |

@@ -31,13 +31,20 @@ const rawSchema = z.object({
   OBJECT_STORAGE_PATH: z.string().default('./storage'),
   SENTRY_DSN: optionalText,
   METRICS_ENABLED: booleanFromEnvironment.default(true),
+  GUILD_MEMBERS_INTENT_ENABLED: booleanFromEnvironment.default(false),
   MESSAGE_CONTENT_ENABLED: booleanFromEnvironment.default(false),
   REACTION_FEATURES_ENABLED: booleanFromEnvironment.default(false)
 });
 
 export type AppConfig = Readonly<{
   environment: 'development' | 'test' | 'production';
-  discord: { token: string; clientId: string; testGuildId?: string; ownerIds: ReadonlySet<string> };
+  discord: {
+    token: string;
+    clientId: string;
+    testGuildId?: string;
+    ownerIds: ReadonlySet<string>;
+    guildMembersIntentEnabled: boolean;
+  };
   databaseUrl: string;
   redisUrl: string;
   encryptionKey?: string;
@@ -107,7 +114,8 @@ export const loadConfig = (source: NodeJS.ProcessEnv = process.env): AppConfig =
       token: value.DISCORD_TOKEN,
       clientId: value.DISCORD_CLIENT_ID,
       ...(value.DISCORD_TEST_GUILD_ID ? { testGuildId: value.DISCORD_TEST_GUILD_ID } : {}),
-      ownerIds: parseOwnerIds(value.DISCORD_OWNER_IDS)
+      ownerIds: parseOwnerIds(value.DISCORD_OWNER_IDS),
+      guildMembersIntentEnabled: value.GUILD_MEMBERS_INTENT_ENABLED
     },
     databaseUrl: value.DATABASE_URL,
     redisUrl: value.REDIS_URL,
