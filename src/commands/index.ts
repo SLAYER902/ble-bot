@@ -7,12 +7,14 @@ import type { ModerationService } from '../features/moderation/moderation-servic
 import type { TicketRepository } from '../features/tickets/ticket-repository.js';
 import type { TicketService } from '../features/tickets/ticket-service.js';
 import type { RoleService } from '../features/roles/role-service.js';
+import type { PremiumService } from '../features/premium/premium-service.js';
 import type { EmojiRegistry } from '../ui/emoji/emoji-registry.js';
 import type { Ui } from '../ui/ui.js';
 import { createBackupCommand } from './backup/backup-command.js';
 import { createDeveloperCommand } from './developer/developer-command.js';
 import { createHelpCommand } from './help/help-command.js';
 import { createModerationCommand } from './moderation/moderation-command.js';
+import { createPremiumCommand } from './premium/premium-command.js';
 import { createRoleCommand } from './roles/role-command.js';
 import { CommandRegistry } from './framework/registry.js';
 import { createSecurityCommand } from './security/security-command.js';
@@ -32,6 +34,7 @@ export type CommandServices = Readonly<{
   tickets: TicketService;
   ticketRepository: TicketRepository;
   roles: RoleService;
+  premium: PremiumService;
   startedAt: Date;
 }>;
 
@@ -44,8 +47,11 @@ export const createCommandRegistry = (services: CommandServices): CommandRegistr
   registry.register(
     createModerationCommand(services.moderation, services.moderationRepository, services.ui)
   );
-  registry.register(createTicketCommand(services.tickets, services.ticketRepository, services.ui));
+  registry.register(
+    createTicketCommand(services.tickets, services.ticketRepository, services.premium, services.ui)
+  );
   registry.register(createRoleCommand(services.roles, services.ui));
+  registry.register(createPremiumCommand(services.premium, services.ticketRepository, services.ui));
   registry.register(createUtilityCommand(services.ui, services.startedAt));
   registry.register(createDeveloperCommand(services.emojis, services.ui));
   return registry;

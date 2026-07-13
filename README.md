@@ -9,10 +9,10 @@ It deliberately does not provide offensive server-destruction tooling. It never 
 - Strict TypeScript modular monolith with PostgreSQL, Redis, BullMQ, Pino, Zod, Vitest, ESLint, Prettier, Docker, and generated Drizzle migrations.
 - BLE Shield normalized events, jittered bounded audit correlation, Redis-backed atomic rolling windows, explainable risk scoring, state transitions, incidents, and narrow role/webhook containment.
 - BLE Backup structural snapshots with checksum verification, encrypted local storage when `ENCRYPTION_KEY` is present, list/inspect support, and restore previews that make no changes.
-- Resumable setup state, health and Prometheus endpoints, central custom application-emoji registry, interaction error handling, owner-only emoji diagnostics, and command deployment scripts.
+- Resumable interactive setup and help centres, persistent ticket panels with modal intake and ticket controls, central custom application-emoji registry, component interaction routing, owner-only emoji diagnostics, and command deployment scripts.
 - BLE AI provider and atomic credit-reservation infrastructure. AI remains disabled until an OpenAI-compatible provider is configured.
 
-The currently registered command families are `/help`, `/setup`, `/security`, `/backup`, `/moderation`, `/ticket`, `/role`, `/utility`, and owner-only `/developer`. Other requested product modules are intentionally not registered until they have complete, safe implementations; BLE Bot never reports an unavailable feature as successful.
+The currently registered command families are `/help`, `/setup`, `/security`, `/backup`, `/moderation`, `/ticket`, `/role`, `/premium`, `/utility`, and owner-only `/developer`. Other requested product modules are intentionally not registered until they have complete, safe implementations; BLE Bot never reports an unavailable feature as successful.
 
 ## Prerequisites
 
@@ -82,12 +82,14 @@ Missing or unavailable emojis use text-only labels; the bot never substitutes Un
 
 ```text
 /help
-/setup start | status | diagnostics
+/setup start | status | continue | diagnostics | export
 /security status | enable | mode | incident
 /backup create | list | inspect | compare
 /moderation warn | timeout | kick | ban | unban | history
-/ticket create | close | reopen | claim | unclaim | list
+/ticket setup | create | close | reopen | claim | unclaim | list | info | settings
+/ticket panel create | edit | send | list | delete
 /role add | remove | info
+/premium status | features | compare
 /utility ping | uptime | timestamp
 /developer emoji-status | status
 ```

@@ -3,18 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import type { Ui } from '../../ui/ui.js';
 import type { Command, CommandContext } from '../framework/types.js';
 import type { CommandRegistry } from '../framework/registry.js';
-
-const categoryLabels: Readonly<Record<string, string>> = {
-  security: 'Security controls',
-  backup: 'Backups and recovery',
-  moderation: 'Moderation tools',
-  management: 'Server management',
-  community: 'Community tools',
-  utility: 'Utilities',
-  music: 'Music',
-  ai: 'AI tools',
-  developer: 'Developer tools'
-};
+import { helpHome, helpSearch } from './help-view.js';
 
 const documentationLinks = [
   {
@@ -67,7 +56,7 @@ export const createHelpCommand = (registry: CommandRegistry, ui: Ui): Command =>
           )
         )
       : undefined;
-    if (requested && !selected) {
+    if (requested && !selected && interaction.options.getString('command')) {
       await interaction.reply({
         embeds: [
           ui.warning(
@@ -75,6 +64,13 @@ export const createHelpCommand = (registry: CommandRegistry, ui: Ui): Command =>
             'Use /help without options to view available command families.'
           )
         ],
+        ephemeral: true
+      });
+      return;
+    }
+    if (requested && !selected) {
+      await interaction.reply({
+        embeds: [helpSearch(registry, ui, requested)],
         ephemeral: true
       });
       return;
@@ -105,35 +101,6 @@ export const createHelpCommand = (registry: CommandRegistry, ui: Ui): Command =>
       });
       return;
     }
-    const byCategory = new Map<string, typeof commands>();
-    for (const command of commands) {
-      const category = command.metadata.category;
-      const listed = byCategory.get(category) ?? [];
-      listed.push(command);
-      byCategory.set(category, listed);
-    }
-    const fields = [...byCategory.entries()]
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([category, listed]) => ({
-        name: categoryLabels[category] ?? category,
-        value: listed
-          .sort((left, right) => left.metadata.name.localeCompare(right.metadata.name))
-          .map((command) => `**/${command.metadata.name}** — ${command.metadata.summary}`)
-          .join('\n'),
-        inline: false
-      }));
-    const embed = ui
-      .embed(
-        'info',
-        ui.labeled('BLE command center', 'settings'),
-        `**${commands.length} command families, built for safe server operations.**\n\nStart with \`/setup start\` to create a saved server plan, or open a focused guide with \`/help command:<family>\`.`
-      )
-      .addFields(fields)
-      .setFooter({ text: 'BLE // Command guides are private to you' });
-    await interaction.reply({
-      embeds: [embed],
-      components: [ui.resourceLinks(...documentationLinks)],
-      ephemeral: true
-    });
+    await interaction.reply({ ...helpHome(registry, ui), ephemeral: true });
   }
 });

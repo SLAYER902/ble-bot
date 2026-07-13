@@ -1,6 +1,7 @@
 import { Events } from 'discord.js';
 
 import { createCommandRegistry } from '../commands/index.js';
+import { HelpInteractionHandler } from '../commands/help/help-interaction-handler.js';
 import { InteractionRouter } from '../commands/framework/interaction-router.js';
 import { createDiscordClient } from '../client/discord-client.js';
 import { loadConfig, type AppConfig } from '../config/env.js';
@@ -11,9 +12,12 @@ import { DiscordSnapshotProvider } from '../features/backup/discord-snapshot-pro
 import { ModerationRepository } from '../features/moderation/moderation-repository.js';
 import { ModerationService } from '../features/moderation/moderation-service.js';
 import { TicketRepository } from '../features/tickets/ticket-repository.js';
+import { TicketInteractionHandler } from '../features/tickets/ticket-interaction-handler.js';
 import { TicketService } from '../features/tickets/ticket-service.js';
 import { RoleService } from '../features/roles/role-service.js';
+import { PremiumService } from '../features/premium/premium-service.js';
 import { SetupService } from '../features/setup/setup-service.js';
+import { SetupInteractionHandler } from '../features/setup/setup-interaction-handler.js';
 import { AuditResolver } from '../features/security/audit-resolver.js';
 import { DiscordContainmentExecutor } from '../features/security/containment.js';
 import { DiscordSecurityIngestor } from '../features/security/discord-ingestor.js';
@@ -53,6 +57,12 @@ export const startGateway = async (): Promise<void> => {
   const queues = new QueueService(redis.client, logger);
   const client = createDiscordClient(config);
   const emojis = new EmojiRegistry();
+  const invalidEmojiKeys = emojis
+    .status()
+    .filter((status) => !status.valid)
+    .map((status) => status.key);
+  if (invalidEmojiKeys.length)
+    logger.warn({ emojiKeys: invalidEmojiKeys }, 'Invalid BLE application emoji configuration');
   const ui = new Ui(emojis);
   const securityRepository = new PostgresSecurityRepository(database);
   const security = new SecurityService(
@@ -68,6 +78,7 @@ export const startGateway = async (): Promise<void> => {
   const ticketRepository = new TicketRepository(database);
   const tickets = new TicketService(ticketRepository);
   const roles = new RoleService();
+  const premium = new PremiumService(database);
   const backupRepository = new BackupRepository(database);
   const backupService = new BackupService(
     new DiscordSnapshotProvider(),
@@ -86,9 +97,14 @@ export const startGateway = async (): Promise<void> => {
     tickets,
     ticketRepository,
     roles,
+    premium,
     startedAt
   });
-  const router = new InteractionRouter(registry, config, ui, logger, metrics);
+  const router = new InteractionRouter(registry, config, ui, logger, metrics, [
+    new TicketInteractionHandler(tickets, ticketRepository, premium, ui),
+    new SetupInteractionHandler(setup, ui),
+    new HelpInteractionHandler(registry, ui)
+  ]);
   const health = new HealthServer(config, logger, metrics, [
     { name: 'database', check: () => database.isReady() },
     { name: 'redis', check: () => redis.isReady() },

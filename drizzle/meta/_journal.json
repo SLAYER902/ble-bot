@@ -8,6 +8,13 @@
       "when": 1783937412588,
       "tag": "0000_dry_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783974491812,
+      "tag": "0001_zippy_zarek",
+      "breakpoints": true
     }
   ]
 }

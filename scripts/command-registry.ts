@@ -8,6 +8,7 @@ import { ModerationService } from '../src/features/moderation/moderation-service
 import { TicketRepository } from '../src/features/tickets/ticket-repository.js';
 import { TicketService } from '../src/features/tickets/ticket-service.js';
 import { RoleService } from '../src/features/roles/role-service.js';
+import { PremiumService } from '../src/features/premium/premium-service.js';
 import { SetupService } from '../src/features/setup/setup-service.js';
 import { PostgresSecurityRepository } from '../src/features/security/security-repository.js';
 import { Database } from '../src/infrastructure/database/database.js';
@@ -37,6 +38,7 @@ export const commandsForScripts = () => {
     tickets: new TicketService(ticketRepository),
     ticketRepository,
     roles: new RoleService(),
+    premium: new PremiumService(database),
     startedAt: new Date()
   };
   return createCommandRegistry(services);

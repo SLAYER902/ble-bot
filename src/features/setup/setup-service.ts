@@ -17,12 +17,9 @@ export class SetupService {
       await db
         .insert(guildSettings)
         .values({ guildId, setupStep: 1, setupCompleted: false })
-        .onConflictDoUpdate({
-          target: guildSettings.guildId,
-          set: { setupStep: 1, setupCompleted: false, updatedAt: new Date() }
-        });
+        .onConflictDoNothing();
     });
-    return { step: 1, completed: false };
+    return this.status(guildId);
   }
 
   public async status(guildId: string): Promise<SetupProgress> {
@@ -41,5 +38,9 @@ export class SetupService {
       .set({ setupStep: safeStep, setupCompleted: completed, updatedAt: new Date() })
       .where(eq(guildSettings.guildId, guildId));
     return { step: safeStep, completed };
+  }
+
+  public async reset(guildId: string): Promise<SetupProgress> {
+    return this.advance(guildId, 1, false);
   }
 }

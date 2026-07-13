@@ -1,10 +1,11 @@
-import type { Client, Interaction } from 'discord.js';
+import type { ChatInputCommandInteraction, Client, Interaction } from 'discord.js';
 import type { Logger } from 'pino';
 
 import type { AppConfig } from '../../config/env.js';
 import { isDomainError, PermissionDeniedError } from '../../errors/domain-error.js';
 import type { Metrics } from '../../infrastructure/metrics/metrics.js';
 import type { Ui } from '../../ui/ui.js';
+import type { ComponentHandler } from './component-handler.js';
 import type { CommandRegistry } from './registry.js';
 
 export class InteractionRouter {
@@ -13,7 +14,8 @@ export class InteractionRouter {
     private readonly config: AppConfig,
     private readonly ui: Ui,
     private readonly logger: Logger,
-    private readonly metrics: Metrics
+    private readonly metrics: Metrics,
+    private readonly componentHandlers: readonly ComponentHandler[] = []
   ) {}
 
   public attach(client: Client): void {
@@ -23,7 +25,15 @@ export class InteractionRouter {
   }
 
   private async route(interaction: Interaction): Promise<void> {
-    if (!interaction.isChatInputCommand()) return;
+    if (interaction.isChatInputCommand()) {
+      await this.routeCommand(interaction);
+      return;
+    }
+    const handler = this.componentHandlers.find((candidate) => candidate.canHandle(interaction));
+    if (handler) await this.routeComponent(interaction, handler);
+  }
+
+  private async routeCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     const command = this.registry.get(interaction.commandName);
     if (!command) return;
     const traceId = crypto.randomUUID();
@@ -62,6 +72,37 @@ export class InteractionRouter {
         else await interaction.reply(payload);
       } catch (replyError) {
         this.logger.warn({ traceId, err: replyError }, 'Unable to send interaction error response');
+      }
+    } finally {
+      stop();
+    }
+  }
+
+  private async routeComponent(interaction: Interaction, handler: ComponentHandler): Promise<void> {
+    const traceId = crypto.randomUUID();
+    const stop = this.metrics.interactionDuration.startTimer({ command: 'component' });
+    try {
+      await handler.handle(interaction);
+      this.metrics.commandExecutions.inc({ command: 'component', outcome: 'success' });
+    } catch (error) {
+      this.metrics.commandExecutions.inc({ command: 'component', outcome: 'error' });
+      this.logger.error({ traceId, err: error }, 'Component interaction failed');
+      if (!interaction.isRepliable()) return;
+      const description = isDomainError(error)
+        ? error.safeMessage
+        : `BLE Bot could not complete this request. Reference: ${traceId}`;
+      const payload = {
+        embeds: [this.ui.error('Action not completed', description)],
+        ephemeral: true
+      };
+      try {
+        if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
+        else await interaction.reply(payload);
+      } catch (replyError) {
+        this.logger.warn(
+          { traceId, err: replyError },
+          'Unable to send component interaction error'
+        );
       }
     } finally {
       stop();

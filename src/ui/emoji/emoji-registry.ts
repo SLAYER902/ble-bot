@@ -157,6 +157,10 @@ export class EmojiRegistry {
     return this.emojis.get(key);
   }
 
+  public isConfigured(key: EmojiKey): boolean {
+    return this.emojis.has(key);
+  }
+
   public format(key: EmojiKey): string | undefined {
     const emoji = this.get(key);
     return emoji ? `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>` : undefined;
@@ -166,6 +170,12 @@ export class EmojiRegistry {
     key: EmojiKey
   ): Readonly<{ id: string; name: string; animated: boolean }> | undefined {
     return this.get(key);
+  }
+
+  public button(
+    key: EmojiKey
+  ): Readonly<{ id: string; name: string; animated: boolean }> | undefined {
+    return this.component(key);
   }
 
   public status(availableIds: ReadonlySet<string> = new Set()): readonly EmojiStatus[] {

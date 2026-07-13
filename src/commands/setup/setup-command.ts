@@ -5,18 +5,14 @@ import type { SetupService } from '../../features/setup/setup-service.js';
 import type { Ui } from '../../ui/ui.js';
 import type { Command, CommandContext } from '../framework/types.js';
 
-const setupLinks = [
-  {
-    label: 'Setup guide',
-    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/DEPLOYMENT.md',
-    emoji: 'guide'
-  },
-  {
-    label: 'Security model',
-    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/SECURITY-MODEL.md',
-    emoji: 'security'
-  }
-] as const;
+const setupSection = (step: number): string => {
+  if (step <= 1) return 'Baseline verification';
+  if (step <= 3) return 'Security posture';
+  if (step <= 5) return 'Recovery and backups';
+  if (step <= 8) return 'Moderation and tickets';
+  if (step <= 12) return 'Community modules';
+  return 'Review and completion';
+};
 
 export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
   metadata: {
@@ -24,7 +20,7 @@ export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
     category: 'management',
     summary: 'Start and inspect BLE Bot setup.',
     longDescription: 'Persists a resumable server setup workflow and surfaces its current state.',
-    examples: ['/setup start', '/setup status'],
+    examples: ['/setup start', '/setup continue', '/setup status'],
     requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
     requiredBotPermissions: [],
     defaultCooldownSeconds: 5,
@@ -40,13 +36,19 @@ export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
     .setName('setup')
     .setDescription('Configure BLE Bot.')
     .addSubcommand((subcommand) =>
-      subcommand.setName('start').setDescription('Start or restart the resumable setup workflow.')
+      subcommand.setName('start').setDescription('Open the resumable BLE setup centre.')
     )
     .addSubcommand((subcommand) =>
       subcommand.setName('status').setDescription('View setup progress.')
     )
     .addSubcommand((subcommand) =>
       subcommand.setName('diagnostics').setDescription('View the local setup prerequisites.')
+    )
+    .addSubcommand((subcommand) =>
+      subcommand.setName('continue').setDescription('Advance to the next saved setup checkpoint.')
+    )
+    .addSubcommand((subcommand) =>
+      subcommand.setName('export').setDescription('Export the current setup state for review.')
     ),
   async execute({ interaction }: CommandContext): Promise<void> {
     if (!interaction.guild)
@@ -54,63 +56,45 @@ export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
     const subcommand = interaction.options.getSubcommand();
     if (subcommand === 'start') {
       const progress = await service.start(interaction.guild.id, interaction.guild.name);
-      const embed = ui
-        .embed(
-          'info',
-          ui.labeled('Setup workspace created', 'guide'),
-          `Your configuration is saved and can be resumed at any time. **Step ${progress.step} of 17** is now active.`
-        )
-        .addFields(
-          {
-            name: ui.labeled('01 — Verify the baseline', 'staff'),
-            value: 'Run `/setup diagnostics` to confirm permissions and role hierarchy.',
-            inline: false
-          },
-          {
-            name: ui.labeled('02 — Set your security posture', 'shield'),
-            value: 'Use `/security status` to review protection before enabling safeguards.',
-            inline: false
-          },
-          {
-            name: ui.labeled('03 — Prepare recovery', 'backup'),
-            value: 'Use `/backup create` after configuration to capture a safe baseline.',
-            inline: false
-          }
-        )
-        .setFooter({ text: 'BLE // Your setup state is saved automatically' });
       await interaction.reply({
-        embeds: [embed],
-        components: [ui.resourceLinks(...setupLinks)],
+        ...ui.setupControlPanel({ ...progress, currentSection: setupSection(progress.step) }),
         ephemeral: true
       });
       return;
     }
     if (subcommand === 'status') {
       const progress = await service.status(interaction.guild.id);
-      const description =
-        progress.step === 0
-          ? 'No saved setup exists for this server yet. Start when you are ready to configure BLE.'
-          : `Your saved configuration is active. **Step ${progress.step} of 17** is the current checkpoint.`;
-      const embed = ui
-        .embed('info', ui.labeled('Setup progress', 'settings'), description)
-        .addFields(
-          {
-            name: 'Workspace state',
-            value: progress.completed
-              ? 'Complete — review `/security status` regularly.'
-              : 'In progress — your changes are preserved.',
-            inline: true
-          },
-          {
-            name: 'Recommended next action',
-            value: progress.step === 0 ? '`/setup start`' : '`/setup diagnostics`',
-            inline: true
-          }
-        )
-        .setFooter({ text: 'BLE // Setup never overwrites your saved configuration' });
       await interaction.reply({
-        embeds: [embed],
-        components: [ui.resourceLinks(...setupLinks)],
+        ...ui.setupControlPanel({ ...progress, currentSection: setupSection(progress.step) }),
+        ephemeral: true
+      });
+      return;
+    }
+    if (subcommand === 'continue') {
+      const current = await service.status(interaction.guild.id);
+      const started =
+        current.step === 0
+          ? await service.start(interaction.guild.id, interaction.guild.name)
+          : current;
+      const nextStep = Math.min(started.step + 1, 17);
+      const progress = await service.advance(interaction.guild.id, nextStep, nextStep === 17);
+      await interaction.reply({
+        ...ui.setupControlPanel({ ...progress, currentSection: setupSection(progress.step) }),
+        ephemeral: true
+      });
+      return;
+    }
+    if (subcommand === 'export') {
+      const progress = await service.status(interaction.guild.id);
+      await interaction.reply({
+        embeds: [
+          ui.page('info', {
+            title: ui.labeled('Setup state export', 'documentation'),
+            description: `Server: ${interaction.guild.name}\nProgress: ${progress.step} of 17\nState: ${progress.completed ? 'Complete' : 'In progress'}\nCurrent section: ${setupSection(progress.step)}`,
+            footer:
+              'This export contains setup state only. It never includes secrets or private configuration values.'
+          })
+        ],
         ephemeral: true
       });
       return;

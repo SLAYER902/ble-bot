@@ -291,6 +291,31 @@ export const moderationCases = pgTable(
   ]
 );
 
+export const ticketPanels = pgTable(
+  'ticket_panels',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    guildId: varchar('guild_id', { length: 32 })
+      .notNull()
+      .references(() => guilds.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 80 }).notNull(),
+    description: text('description').notNull(),
+    targetChannelId: varchar('target_channel_id', { length: 32 }),
+    categoryId: varchar('category_id', { length: 32 }),
+    messageId: varchar('message_id', { length: 32 }),
+    staffRoleIds: jsonb('staff_role_ids').notNull().default([]),
+    maxOpenPerUser: integer('max_open_per_user').notNull().default(2),
+    enabled: boolean('enabled').notNull().default(true),
+    createdBy: varchar('created_by', { length: 32 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('ticket_panel_guild_created_idx').on(table.guildId, table.createdAt),
+    uniqueIndex('ticket_panel_message_unique').on(table.messageId)
+  ]
+);
+
 export const tickets = pgTable(
   'tickets',
   {
@@ -300,14 +325,51 @@ export const tickets = pgTable(
       .references(() => guilds.id, { onDelete: 'restrict' }),
     channelId: varchar('channel_id', { length: 32 }).notNull().unique(),
     openerId: varchar('opener_id', { length: 32 }).notNull(),
+    panelId: uuid('panel_id').references(() => ticketPanels.id, { onDelete: 'set null' }),
+    subject: varchar('subject', { length: 120 }).notNull().default(''),
+    details: text('details').notNull().default(''),
+    controlMessageId: varchar('control_message_id', { length: 32 }),
     claimedBy: varchar('claimed_by', { length: 32 }),
     status: varchar('status', { length: 16 }).notNull().default('OPEN'),
     priority: varchar('priority', { length: 16 }).notNull().default('NORMAL'),
     category: varchar('category', { length: 48 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    closedAt: timestamp('closed_at', { withTimezone: true })
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    closedBy: varchar('closed_by', { length: 32 }),
+    closedReason: text('closed_reason')
   },
-  (table) => [index('ticket_guild_status_idx').on(table.guildId, table.status)]
+  (table) => [
+    index('ticket_guild_status_idx').on(table.guildId, table.status),
+    index('ticket_panel_status_idx').on(table.panelId, table.status)
+  ]
+);
+
+export const ticketParticipants = pgTable(
+  'ticket_participants',
+  {
+    ticketId: uuid('ticket_id')
+      .notNull()
+      .references(() => tickets.id, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 32 }).notNull(),
+    addedBy: varchar('added_by', { length: 32 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [primaryKey({ columns: [table.ticketId, table.userId] })]
+);
+
+export const ticketTimelineEvents = pgTable(
+  'ticket_timeline_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ticketId: uuid('ticket_id')
+      .notNull()
+      .references(() => tickets.id, { onDelete: 'cascade' }),
+    actorId: varchar('actor_id', { length: 32 }),
+    kind: varchar('kind', { length: 48 }).notNull(),
+    details: jsonb('details').notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [index('ticket_timeline_ticket_created_idx').on(table.ticketId, table.createdAt)]
 );
 
 export const reminders = pgTable(
