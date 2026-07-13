@@ -11,7 +11,7 @@ const colors = {
 } as const;
 
 export type UiKind = keyof typeof colors;
-export type ResourceLink = Readonly<{ label: string; url: string }>;
+export type ResourceLink = Readonly<{ label: string; url: string; emoji?: EmojiKey }>;
 
 export class Ui {
   public constructor(private readonly emojis: EmojiRegistry) {}
@@ -67,11 +67,15 @@ export class Ui {
 
   public resourceLinks(...links: readonly ResourceLink[]): ActionRowBuilder<ButtonBuilder> {
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
-      links
-        .slice(0, 5)
-        .map((link) =>
-          new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(link.label).setURL(link.url)
-        )
+      links.slice(0, 5).map((link) => {
+        const button = new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setLabel(link.label)
+          .setURL(link.url);
+        const emoji = link.emoji ? this.emojis.component(link.emoji) : undefined;
+        if (emoji) button.setEmoji(emoji);
+        return button;
+      })
     );
   }
 

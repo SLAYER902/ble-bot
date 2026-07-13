@@ -8,11 +8,13 @@ import type { Command, CommandContext } from '../framework/types.js';
 const setupLinks = [
   {
     label: 'Setup guide',
-    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/DEPLOYMENT.md'
+    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/DEPLOYMENT.md',
+    emoji: 'guide'
   },
   {
     label: 'Security model',
-    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/SECURITY-MODEL.md'
+    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/SECURITY-MODEL.md',
+    emoji: 'security'
   }
 ] as const;
 

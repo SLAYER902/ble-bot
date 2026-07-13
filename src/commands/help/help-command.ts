@@ -19,11 +19,13 @@ const categoryLabels: Readonly<Record<string, string>> = {
 const documentationLinks = [
   {
     label: 'Documentation',
-    url: 'https://github.com/SLAYER902/ble-bot#readme'
+    url: 'https://github.com/SLAYER902/ble-bot#readme',
+    emoji: 'information'
   },
   {
     label: 'Security model',
-    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/SECURITY-MODEL.md'
+    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/SECURITY-MODEL.md',
+    emoji: 'security'
   }
 ] as const;
 
