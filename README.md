@@ -55,7 +55,7 @@ docker compose up -d bot worker
 docker compose logs -f bot
 ```
 
-The Compose network is internal. Only the health endpoint binds to `127.0.0.1:3001`; PostgreSQL, Redis, and Lavalink are not public.
+PostgreSQL, Redis, and Lavalink use an internal Compose network. The bot also has an outbound-only network for Discord; only its health endpoint binds to `127.0.0.1:3001`, and no dependency ports are public.
 
 ## Discord Developer Portal
 

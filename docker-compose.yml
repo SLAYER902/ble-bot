@@ -15,7 +15,7 @@ services:
       - ble_storage:/app/storage
     ports:
       - '127.0.0.1:3001:3001'
-    networks: [ble_internal]
+    networks: [ble_internal, ble_egress]
   worker:
     build: .
     command: node dist/src/worker.js
@@ -79,6 +79,7 @@ services:
 networks:
   ble_internal:
     internal: true
+  ble_egress:
 
 volumes:
   postgres_data:
