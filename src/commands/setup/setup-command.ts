@@ -5,6 +5,17 @@ import type { SetupService } from '../../features/setup/setup-service.js';
 import type { Ui } from '../../ui/ui.js';
 import type { Command, CommandContext } from '../framework/types.js';
 
+const setupLinks = [
+  {
+    label: 'Setup guide',
+    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/DEPLOYMENT.md'
+  },
+  {
+    label: 'Security model',
+    url: 'https://github.com/SLAYER902/ble-bot/blob/main/docs/SECURITY-MODEL.md'
+  }
+] as const;
+
 export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
   metadata: {
     name: 'setup',
@@ -41,28 +52,62 @@ export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
     const subcommand = interaction.options.getSubcommand();
     if (subcommand === 'start') {
       const progress = await service.start(interaction.guild.id, interaction.guild.name);
+      const embed = ui
+        .info(
+          'Setup workspace created',
+          `Your configuration is saved and can be resumed at any time. **Step ${progress.step} of 17** is now active.`
+        )
+        .addFields(
+          {
+            name: '01 — Verify the baseline',
+            value: 'Run `/setup diagnostics` to confirm permissions and role hierarchy.',
+            inline: false
+          },
+          {
+            name: '02 — Set your security posture',
+            value: 'Use `/security status` to review protection before enabling safeguards.',
+            inline: false
+          },
+          {
+            name: '03 — Prepare recovery',
+            value: 'Use `/backup create` after configuration to capture a safe baseline.',
+            inline: false
+          }
+        )
+        .setFooter({ text: 'BLE // Your setup state is saved automatically' });
       await interaction.reply({
-        embeds: [
-          ui.info(
-            'Setup started',
-            `Setup progress is saved. Current step: ${progress.step} of 17. Configure security, logs, trusted administrators, and feature modules through the available command families.`
-          )
-        ],
+        embeds: [embed],
+        components: [ui.resourceLinks(...setupLinks)],
         ephemeral: true
       });
       return;
     }
     if (subcommand === 'status') {
       const progress = await service.status(interaction.guild.id);
+      const description =
+        progress.step === 0
+          ? 'No saved setup exists for this server yet. Start when you are ready to configure BLE.'
+          : `Your saved configuration is active. **Step ${progress.step} of 17** is the current checkpoint.`;
+      const embed = ui
+        .diagnostics('Setup progress', description)
+        .addFields(
+          {
+            name: 'Workspace state',
+            value: progress.completed
+              ? 'Complete — review `/security status` regularly.'
+              : 'In progress — your changes are preserved.',
+            inline: true
+          },
+          {
+            name: 'Recommended next action',
+            value: progress.step === 0 ? '`/setup start`' : '`/setup diagnostics`',
+            inline: true
+          }
+        )
+        .setFooter({ text: 'BLE // Setup never overwrites your saved configuration' });
       await interaction.reply({
-        embeds: [
-          ui.diagnostics(
-            'Setup status',
-            progress.step === 0
-              ? 'Setup has not been started.'
-              : `Current step: ${progress.step} of 17. Completed: ${progress.completed ? 'Yes' : 'No'}.`
-          )
-        ],
+        embeds: [embed],
+        components: [ui.resourceLinks(...setupLinks)],
         ephemeral: true
       });
       return;

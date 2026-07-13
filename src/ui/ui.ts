@@ -3,14 +3,15 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'disc
 import type { EmojiKey, EmojiRegistry } from './emoji/emoji-registry.js';
 
 const colors = {
-  success: 0x2f855a,
-  error: 0xc53030,
-  warning: 0xb7791f,
-  info: 0x2b6cb0,
-  security: 0x553c9a
+  success: 0x57f287,
+  error: 0xed4245,
+  warning: 0xfee75c,
+  info: 0x5865f2,
+  security: 0x9b59b6
 } as const;
 
 export type UiKind = keyof typeof colors;
+export type ResourceLink = Readonly<{ label: string; url: string }>;
 
 export class Ui {
   public constructor(private readonly emojis: EmojiRegistry) {}
@@ -18,8 +19,10 @@ export class Ui {
   public embed(kind: UiKind, title: string, description: string): EmbedBuilder {
     return new EmbedBuilder()
       .setColor(colors[kind])
+      .setAuthor({ name: 'BLE  •  DEFENSIVE OPERATIONS' })
       .setTitle(title)
       .setDescription(description)
+      .setFooter({ text: 'BLE Shield  •  Safer server operations' })
       .setTimestamp();
   }
 
@@ -60,6 +63,16 @@ export class Ui {
     if (confirmEmoji) confirm.setEmoji(confirmEmoji);
     if (cancelEmoji) cancel.setEmoji(cancelEmoji);
     return new ActionRowBuilder<ButtonBuilder>().addComponents(confirm, cancel);
+  }
+
+  public resourceLinks(...links: readonly ResourceLink[]): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+      links
+        .slice(0, 5)
+        .map((link) =>
+          new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(link.label).setURL(link.url)
+        )
+    );
   }
 
   public labeled(title: string, emoji: EmojiKey | undefined): string {
