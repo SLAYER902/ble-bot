@@ -16,6 +16,8 @@ import { TicketInteractionHandler } from '../features/tickets/ticket-interaction
 import { TicketService } from '../features/tickets/ticket-service.js';
 import { RoleService } from '../features/roles/role-service.js';
 import { PremiumService } from '../features/premium/premium-service.js';
+import { MusicService } from '../features/music/music-service.js';
+import { MusicInteractionHandler } from '../features/music/music-interaction-handler.js';
 import { SetupService } from '../features/setup/setup-service.js';
 import { SetupInteractionHandler } from '../features/setup/setup-interaction-handler.js';
 import { AuditResolver } from '../features/security/audit-resolver.js';
@@ -79,6 +81,7 @@ export const startGateway = async (): Promise<void> => {
   const tickets = new TicketService(ticketRepository);
   const roles = new RoleService();
   const premium = new PremiumService(database);
+  const music = new MusicService(client, config, ui, logger);
   const backupRepository = new BackupRepository(database);
   const backupService = new BackupService(
     new DiscordSnapshotProvider(),
@@ -98,10 +101,12 @@ export const startGateway = async (): Promise<void> => {
     ticketRepository,
     roles,
     premium,
+    music,
     startedAt
   });
   const router = new InteractionRouter(registry, config, ui, logger, metrics, [
     new TicketInteractionHandler(tickets, ticketRepository, premium, ui),
+    new MusicInteractionHandler(music, premium, ui),
     new SetupInteractionHandler(setup, ui),
     new HelpInteractionHandler(registry, ui)
   ]);
@@ -119,6 +124,7 @@ export const startGateway = async (): Promise<void> => {
       health.close(),
       queues.close(),
       client.destroy(),
+      music.close(),
       redis.close(),
       database.close()
     ]);
@@ -143,7 +149,11 @@ export const startGateway = async (): Promise<void> => {
       { userId: ready.user.id, tag: ready.user.tag, guilds: ready.guilds.cache.size },
       'BLE Bot gateway ready'
     );
+    void music
+      .initialize()
+      .catch((error: unknown) => logger.warn({ err: error }, 'BLE Music is waiting for Lavalink'));
   });
+  client.on(Events.VoiceStateUpdate, (_before, after) => music.observeVoiceState(after.guild.id));
   client.on(Events.Error, (error) => logger.error({ err: error }, 'Discord client error'));
   router.attach(client);
   registerSecurityEvents(

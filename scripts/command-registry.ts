@@ -9,17 +9,26 @@ import { TicketRepository } from '../src/features/tickets/ticket-repository.js';
 import { TicketService } from '../src/features/tickets/ticket-service.js';
 import { RoleService } from '../src/features/roles/role-service.js';
 import { PremiumService } from '../src/features/premium/premium-service.js';
+import { MusicService } from '../src/features/music/music-service.js';
 import { SetupService } from '../src/features/setup/setup-service.js';
 import { PostgresSecurityRepository } from '../src/features/security/security-repository.js';
 import { Database } from '../src/infrastructure/database/database.js';
 import { LocalBackupStorage } from '../src/infrastructure/storage/local-backup-storage.js';
 import { EmojiRegistry } from '../src/ui/emoji/emoji-registry.js';
 import { Ui } from '../src/ui/ui.js';
+import { createDiscordClient } from '../src/client/discord-client.js';
+import { createLogger } from '../src/infrastructure/logging/logger.js';
 
 export const commandsForScripts = () => {
   const config = loadConfig();
   const database = new Database(config);
   const emojis = new EmojiRegistry();
+  const music = new MusicService(
+    createDiscordClient(config),
+    config,
+    new Ui(emojis),
+    createLogger(config)
+  );
   const moderationRepository = new ModerationRepository(database);
   const ticketRepository = new TicketRepository(database);
   const services: CommandServices = {
@@ -39,6 +48,7 @@ export const commandsForScripts = () => {
     ticketRepository,
     roles: new RoleService(),
     premium: new PremiumService(database),
+    music,
     startedAt: new Date()
   };
   return createCommandRegistry(services);

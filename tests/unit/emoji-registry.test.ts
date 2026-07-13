@@ -5,14 +5,18 @@ import { Ui } from '../../src/ui/ui.js';
 
 describe('BLE application emoji registry', () => {
   it('renders a configured application emoji in Discord format', () => {
-    const registry = new EmojiRegistry({ BLE_EMOJI_TICKET: 'bleticket:1526317462495166494' });
+    const registry = new EmojiRegistry({
+      BLE_EMOJI_TICKET: '828044ticket:1526337271635247124',
+      BLE_EMOJI_MEMBER: '82382member:1526337279881384177'
+    });
 
-    expect(registry.format('ticket')).toBe('<:bleticket:1526317462495166494>');
+    expect(registry.format('ticket')).toBe('<:828044ticket:1526337271635247124>');
     expect(registry.component('ticket')).toEqual({
-      id: '1526317462495166494',
-      name: 'bleticket',
+      id: '1526337271635247124',
+      name: '828044ticket',
       animated: false
     });
+    expect(registry.format('member')).toBe('<:82382member:1526337279881384177>');
   });
 
   it('uses text-only controls when an emoji is missing or invalid', () => {

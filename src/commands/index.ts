@@ -8,12 +8,14 @@ import type { TicketRepository } from '../features/tickets/ticket-repository.js'
 import type { TicketService } from '../features/tickets/ticket-service.js';
 import type { RoleService } from '../features/roles/role-service.js';
 import type { PremiumService } from '../features/premium/premium-service.js';
+import type { MusicService } from '../features/music/music-service.js';
 import type { EmojiRegistry } from '../ui/emoji/emoji-registry.js';
 import type { Ui } from '../ui/ui.js';
 import { createBackupCommand } from './backup/backup-command.js';
 import { createDeveloperCommand } from './developer/developer-command.js';
 import { createHelpCommand } from './help/help-command.js';
 import { createModerationCommand } from './moderation/moderation-command.js';
+import { createMusicCommand } from './music/music-command.js';
 import { createPremiumCommand } from './premium/premium-command.js';
 import { createRoleCommand } from './roles/role-command.js';
 import { CommandRegistry } from './framework/registry.js';
@@ -35,6 +37,7 @@ export type CommandServices = Readonly<{
   ticketRepository: TicketRepository;
   roles: RoleService;
   premium: PremiumService;
+  music: MusicService;
   startedAt: Date;
 }>;
 
@@ -52,6 +55,7 @@ export const createCommandRegistry = (services: CommandServices): CommandRegistr
   );
   registry.register(createRoleCommand(services.roles, services.ui));
   registry.register(createPremiumCommand(services.premium, services.ticketRepository, services.ui));
+  registry.register(createMusicCommand(services.music, services.premium, services.ui));
   registry.register(createUtilityCommand(services.ui, services.startedAt));
   registry.register(createDeveloperCommand(services.emojis, services.ui));
   return registry;

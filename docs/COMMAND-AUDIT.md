@@ -20,7 +20,7 @@ interaction path are implemented; BLE Bot must not register placeholder commands
 | `/verify`      | Missing               | No verification workflow is registered                                                                                                                                   | Requires a safe role and challenge design                                                                        |
 | `/role`        | Partially implemented | Safe add, remove, and information commands                                                                                                                               | Role-panel builder is not implemented                                                                            |
 | `/ticket`      | Partially implemented | Direct creation plus persistent panels, modal intake, selectors, a ticket control panel, staff claims, close confirmation, timeline, transcript export, and panel limits | Add configurable ticket types, transfer, priority editor, scheduled deletion, and long-term transcript retention |
-| `/music`       | Missing by design     | Lavalink and voice dependencies are available; no legal source adapter or player service exists                                                                          | Do not register until a complete compliant source adapter, controller, queue, and cleanup service are available  |
+| `/music`       | Partially implemented | Lavalink v4 search and playback, persistent controller, queue actions, same-voice-channel controls, and automatic cleanup are implemented                                | Add durable guild settings, queue pagination, autoplay, and restart recovery                                     |
 | `/voice`       | Missing               | No temporary voice lifecycle service is registered                                                                                                                       | Requires persisted templates, controls, and empty-channel cleanup                                                |
 | `/utility`     | Implemented           | Ping, uptime, and timestamp                                                                                                                                              | No urgent change required                                                                                        |
 | `/poll`        | Missing               | No poll persistence or workflow is registered                                                                                                                            | Requires a persisted interaction model                                                                           |
@@ -41,13 +41,14 @@ interaction path are implemented; BLE Bot must not register placeholder commands
   timeline data through the additive `0001_zippy_zarek` migration.
 - `guild_entitlements` retains its existing enum. A compatibility layer maps legacy paid tiers to
   the user-facing Premium plan and centralizes current limits.
-- Music and voice infrastructure is intentionally absent. Registering controls before a real
-  player or temporary-channel service would create dead buttons, which is explicitly forbidden.
+- Music now uses Lavalink v4’s REST player API and the Discord voice-gateway update flow. It registers
+  only working playback/search/controller/queue controls and disconnects automatically after an empty
+  voice channel or idle queue. Voice-channel management remains unregistered until a durable temporary
+  voice service is implemented.
 
 ## Implementation order
 
 1. Central BLE UI and a durable interaction router.
 2. Ticket panels, modal intake, ticket controls, timeline, transcript, and free-tier limits.
 3. Setup/help/premium navigation using the same interaction foundation.
-4. Music and voice only after their actual playback and temporary-channel lifecycle services are
-   complete and tested.
+4. Music playback and lifecycle controls, then durable temporary voice-channel management.

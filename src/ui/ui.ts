@@ -13,6 +13,7 @@ import {
 } from 'discord.js';
 
 import type { EmojiKey, EmojiRegistry } from './emoji/emoji-registry.js';
+import type { MusicControllerView, MusicSearchResult } from '../features/music/types.js';
 
 const colors = {
   success: 0x57f287,
@@ -51,6 +52,21 @@ export type TicketEditorView = Readonly<{
   staffRoleIds: readonly string[];
 }>;
 export type NavigationOption = Readonly<{ label: string; value: string; description: string }>;
+
+const formatMusicDuration = (milliseconds: number): string => {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1_000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
+
+const musicProgress = (positionMs: number, durationMs: number): string => {
+  const width = 18;
+  const completed = durationMs > 0 ? Math.round((positionMs / durationMs) * width) : 0;
+  return `[${'#'.repeat(Math.min(width, Math.max(0, completed)))}${'-'.repeat(
+    Math.max(0, width - completed)
+  )}]`;
+};
 
 export class Ui {
   public constructor(private readonly emojis: EmojiRegistry) {}
@@ -134,7 +150,7 @@ export class Ui {
         { name: 'Progress', value: `${input.step} of 17`, inline: true },
         { name: 'Current section', value: input.currentSection, inline: true },
         {
-          name: 'Workspace state',
+          name: this.labeled('Workspace state', 'verified'),
           value: input.completed ? 'Complete' : 'In progress',
           inline: true
         }
@@ -231,14 +247,14 @@ export class Ui {
           title: this.labeled(panel.name, 'ticket'),
           description: panel.description,
           fields: [
-            { name: 'Status', value: status, inline: true },
+            { name: this.labeled('Status', 'verified'), value: status, inline: true },
             {
-              name: 'Open ticket limit',
+              name: this.labeled('Open ticket limit', 'member'),
               value: `${panel.maxOpenPerUser} per member`,
               inline: true
             },
             {
-              name: 'Next action',
+              name: this.labeled('Next action', 'star'),
               value: panel.enabled ? 'Select Open ticket to begin.' : 'Please check back later.'
             }
           ],
@@ -316,10 +332,14 @@ export class Ui {
           title: this.labeled('BLE Support Ticket', 'ticket'),
           description: `Ticket ID: ${ticket.id}`,
           fields: [
-            { name: 'Created by', value: `<@${ticket.openerId}>`, inline: true },
+            {
+              name: this.labeled('Created by', 'member'),
+              value: `<@${ticket.openerId}>`,
+              inline: true
+            },
             { name: 'Category', value: ticket.category, inline: true },
-            { name: 'Status', value: status, inline: true },
-            { name: 'Priority', value: ticket.priority, inline: true },
+            { name: this.labeled('Status', 'verified'), value: status, inline: true },
+            { name: this.labeled('Priority', 'crown'), value: ticket.priority, inline: true },
             { name: 'Assigned staff', value: assigned, inline: true },
             {
               name: 'Created',
@@ -413,12 +433,12 @@ export class Ui {
           fields: [
             { name: 'Plan', value: input.plan, inline: true },
             {
-              name: 'Ticket panels',
+              name: this.labeled('Ticket panels', 'ticket'),
               value: `${input.panelCount} of ${input.panelLimit}`,
               inline: true
             },
             {
-              name: 'Next action',
+              name: this.labeled('Next action', 'star'),
               value: 'Create a panel, then use the editor to select channels and staff roles.'
             }
           ],
@@ -437,6 +457,185 @@ export class Ui {
         )
       ]
     };
+  }
+
+  public musicSearch(
+    sessionId: string,
+    query: string,
+    results: readonly MusicSearchResult[]
+  ): Readonly<{
+    embeds: readonly EmbedBuilder[];
+    components: readonly ActionRowBuilder<StringSelectMenuBuilder>[];
+  }> {
+    return {
+      embeds: [
+        this.page('info', {
+          title: this.labeled('BLE Music search', 'music'),
+          description: `Choose a result for: ${query}`,
+          fields: results.map((result, index) => ({
+            name: `${index + 1}. ${result.title.slice(0, 90)}`,
+            value: `${result.author.slice(0, 80)} | ${formatMusicDuration(result.durationMs)}`
+          })),
+          footer:
+            'Only the person who started this search can choose a track. Selection expires in 5 minutes.'
+        })
+      ],
+      components: [
+        new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+          new StringSelectMenuBuilder()
+            .setCustomId(`ble:music:search:${sessionId}`)
+            .setPlaceholder('Select a track to add to BLE Music')
+            .addOptions(
+              results.map((result, index) => ({
+                label: `${index + 1}. ${result.title}`.slice(0, 100),
+                value: String(index),
+                description: `${result.author} | ${formatMusicDuration(result.durationMs)}`.slice(
+                  0,
+                  100
+                )
+              }))
+            )
+            .setMinValues(1)
+            .setMaxValues(1)
+        )
+      ]
+    };
+  }
+
+  public musicController(view: MusicControllerView): Readonly<{
+    embeds: readonly EmbedBuilder[];
+    components: readonly ActionRowBuilder<ButtonBuilder>[];
+  }> {
+    const disconnected = view.state === 'DISCONNECTED';
+    const current = view.current;
+    const duration = current ? formatMusicDuration(current.durationMs) : '0:00';
+    const position = current ? formatMusicDuration(view.positionMs) : '0:00';
+    const controllerId = `ble:music`;
+    return {
+      embeds: [
+        this.page('info', {
+          title: this.labeled('BLE Music', 'music'),
+          description: current
+            ? `Now playing: ${current.title}\n${current.author}`
+            : disconnected
+              ? 'No active voice connection. Start a new search from a voice channel.'
+              : 'No track is playing. BLE Music will clean up an inactive session automatically.',
+          fields: [
+            {
+              name: this.labeled('Progress', 'music'),
+              value: `${musicProgress(view.positionMs, current?.durationMs ?? 0)} ${position} / ${duration}`
+            },
+            {
+              name: 'Voice channel',
+              value: view.voiceChannelId ? `<#${view.voiceChannelId}>` : 'Not connected',
+              inline: true
+            },
+            { name: 'State', value: view.state, inline: true },
+            { name: 'Queue', value: `${view.queueLength} upcoming`, inline: true },
+            { name: 'Volume', value: `${view.volume}%`, inline: true },
+            { name: 'Loop', value: view.loop, inline: true },
+            ...(current
+              ? [
+                  {
+                    name: this.labeled('Requested by', 'member'),
+                    value: `<@${current.requestedBy}>`
+                  }
+                ]
+              : [])
+          ],
+          footer:
+            view.note ??
+            'BLE Music disconnects automatically when a channel is empty or its queue stays idle.'
+        })
+      ],
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          this.actionButton(
+            `${controllerId}:previous:${view.guildId}`,
+            'Previous',
+            ButtonStyle.Secondary,
+            'previous',
+            !view.previousAvailable || disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:${view.state === 'PAUSED' ? 'resume' : 'pause'}:${view.guildId}`,
+            view.state === 'PAUSED' ? 'Resume' : 'Pause',
+            ButtonStyle.Primary,
+            view.state === 'PAUSED' ? 'resume' : 'pause',
+            !current || disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:skip:${view.guildId}`,
+            'Skip',
+            ButtonStyle.Secondary,
+            'skip',
+            !view.skipAvailable || disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:stop:${view.guildId}`,
+            'Stop',
+            ButtonStyle.Danger,
+            'stop',
+            disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:queue:${view.guildId}`,
+            'Queue',
+            ButtonStyle.Secondary,
+            'queue',
+            disconnected
+          )
+        ),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          this.actionButton(
+            `${controllerId}:loop:${view.guildId}`,
+            `Loop: ${view.loop}`,
+            ButtonStyle.Secondary,
+            'loop',
+            disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:shuffle:${view.guildId}`,
+            'Shuffle',
+            ButtonStyle.Secondary,
+            'shuffle',
+            view.queueLength < 2 || disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:volume:${view.guildId}`,
+            'Volume',
+            ButtonStyle.Secondary,
+            'volume',
+            disconnected
+          ),
+          this.actionButton(
+            `${controllerId}:disconnect:${view.guildId}`,
+            'Disconnect',
+            ButtonStyle.Danger,
+            'voice',
+            disconnected
+          )
+        )
+      ]
+    };
+  }
+
+  public musicVolumeModal(guildId: string): ModalBuilder {
+    return new ModalBuilder()
+      .setCustomId(`ble:music:volume-submit:${guildId}`)
+      .setTitle('Set BLE Music volume')
+      .addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('volume')
+            .setLabel('Volume from 0 to 200')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+            .setMinLength(1)
+            .setMaxLength(3)
+            .setPlaceholder('Example: 100')
+        )
+      );
   }
 
   public navigation(
