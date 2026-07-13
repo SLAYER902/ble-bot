@@ -30,6 +30,7 @@ const defaultOptions: JobsOptions = {
   removeOnComplete: { age: 86_400, count: 1_000 },
   removeOnFail: { age: 604_800, count: 5_000 }
 };
+const queuePrefix = 'ble';
 
 export class QueueService {
   private readonly queues = new Map<QueueName, Queue<JobPayload>>();
@@ -42,9 +43,13 @@ export class QueueService {
     for (const name of queueNames) {
       this.queues.set(
         name,
-        new Queue<JobPayload>(`ble:${name}`, { connection, defaultJobOptions: defaultOptions })
+        new Queue<JobPayload>(name, {
+          connection,
+          prefix: queuePrefix,
+          defaultJobOptions: defaultOptions
+        })
       );
-      const events = new QueueEvents(`ble:${name}`, { connection });
+      const events = new QueueEvents(name, { connection, prefix: queuePrefix });
       events.on('failed', ({ jobId, failedReason }) =>
         logger.error({ queue: name, jobId, failedReason }, 'Queue job failed')
       );
@@ -88,11 +93,16 @@ export class QueueService {
     ) => Promise<void>
   ): Worker<JobPayload> {
     return new Worker<JobPayload>(
-      `ble:${name}`,
+      name,
       async (job) => {
         await processor(job.data, async (progress) => job.updateProgress(progress));
       },
-      { connection: this.connection, concurrency: 2, maxStalledCount: 2 }
+      {
+        connection: this.connection,
+        prefix: queuePrefix,
+        concurrency: 2,
+        maxStalledCount: 2
+      }
     );
   }
 
