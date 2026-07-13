@@ -63,7 +63,11 @@ services:
       SERVER_PORT: 2333
       LAVALINK_SERVER_PASSWORD: ${LAVALINK_PASSWORD:-change-me-before-production}
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:2333/version || exit 1']
+      test:
+        [
+          'CMD-SHELL',
+          'wget -qO- --header="Authorization: $$LAVALINK_SERVER_PASSWORD" http://localhost:2333/version > /dev/null || exit 1'
+        ]
       interval: 15s
       timeout: 5s
       retries: 10
