@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 
 rem BLE Bot one-click setup and launch script for Windows.
-rem It intentionally never writes secrets or overwrites an existing .env file.
+rem It intentionally never writes secrets or overwrites existing .env values.
 
 set "EXIT_CODE=1"
 set "DEPLOY_TEST_COMMANDS=0"
@@ -37,6 +37,7 @@ call :ensure_corepack_and_pnpm || goto :failed
 call :ensure_docker || goto :failed
 call :install_dependencies || goto :failed
 call :create_env || goto :failed
+call :sync_optional_emoji_defaults || goto :failed
 call :validate_environment || goto :failed
 call :build_project || goto :failed
 call :start_dependencies || goto :failed
@@ -234,6 +235,14 @@ if errorlevel 1 (
   exit /b 1
 )
 echo Created .env from .env.example. Add your Discord credentials and rerun this script.
+exit /b 0
+
+:sync_optional_emoji_defaults
+node -e "const fs=require('fs');const {parse}=require('dotenv');const example=parse(fs.readFileSync('.env.example'));const current=parse(fs.readFileSync('.env'));const additions=Object.entries(example).filter(function(entry){return entry[0].startsWith('BLE_EMOJI_') && !(entry[0] in current)});if(additions.length){fs.appendFileSync('.env','\r\n# Optional BLE application emoji defaults\r\n'+additions.map(function(entry){return entry[0]+'='+entry[1]}).join('\r\n')+'\r\n');console.log('Added '+additions.length+' missing optional BLE emoji setting(s) without changing existing .env values.')}"
+if errorlevel 1 (
+  echo ERROR: Unable to add optional BLE emoji settings from .env.example.
+  exit /b 1
+)
 exit /b 0
 
 :validate_environment

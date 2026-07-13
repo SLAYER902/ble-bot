@@ -244,7 +244,7 @@ export class Ui {
     return {
       embeds: [
         this.page('info', {
-          title: this.labeled(panel.name, 'ticket'),
+          title: this.labeled(panel.name, 'ticketPanel'),
           description: panel.description,
           fields: [
             { name: this.labeled('Status', 'verified'), value: status, inline: true },
@@ -267,7 +267,7 @@ export class Ui {
             `ble:ticket:open:${panel.id}`,
             'Open ticket',
             ButtonStyle.Primary,
-            'ticket',
+            'ticketPanel',
             !panel.enabled
           )
         )
@@ -329,7 +329,7 @@ export class Ui {
     return {
       embeds: [
         this.page('info', {
-          title: this.labeled('BLE Support Ticket', 'ticket'),
+          title: this.labeled('BLE Support Ticket', 'ticketPanel'),
           description: `Ticket ID: ${ticket.id}`,
           fields: [
             {
@@ -411,7 +411,7 @@ export class Ui {
             `ble:ticket:panel-publish:${panel.id}`,
             'Publish panel',
             ButtonStyle.Primary,
-            'ticket'
+            'ticketPanel'
           )
         )
       ]
@@ -427,13 +427,13 @@ export class Ui {
     return {
       embeds: [
         this.page('info', {
-          title: this.labeled('BLE Ticket Setup', 'ticket'),
+          title: this.labeled('BLE Ticket Setup', 'ticketPanel'),
           description:
             'Create a persistent ticket panel, configure it with channel and role selectors, then publish it for members.',
           fields: [
             { name: 'Plan', value: input.plan, inline: true },
             {
-              name: this.labeled('Ticket panels', 'ticket'),
+              name: this.labeled('Ticket panels', 'ticketPanel'),
               value: `${input.panelCount} of ${input.panelLimit}`,
               inline: true
             },
@@ -452,7 +452,7 @@ export class Ui {
             'ble:ticket:setup-create:root',
             'Create panel',
             ButtonStyle.Primary,
-            'ticket'
+            'ticketPanel'
           )
         )
       ]

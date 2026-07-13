@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # BLE Bot one-click setup and launch script for Linux.
-# It intentionally never writes secrets or overwrites an existing .env file.
+# It intentionally never writes secrets or overwrites existing .env values.
 
 set -Eeuo pipefail
 
@@ -244,6 +244,25 @@ create_env() {
   printf 'Created .env from .env.example. Add your Discord credentials and rerun this script.\n'
 }
 
+sync_optional_emoji_defaults() {
+  [[ -f .env ]] || return
+  node --input-type=module <<'NODE'
+import fs from 'node:fs';
+import { parse } from 'dotenv';
+
+const example = parse(fs.readFileSync('.env.example'));
+const current = parse(fs.readFileSync('.env'));
+const additions = Object.entries(example).filter(
+  ([key]) => key.startsWith('BLE_EMOJI_') && !(key in current)
+);
+if (additions.length > 0) {
+  const content = additions.map(([key, value]) => `${key}=${value}`).join('\n');
+  fs.appendFileSync('.env', `\n# Optional BLE application emoji defaults\n${content}\n`);
+  console.log(`Added ${additions.length} missing optional BLE emoji setting(s) without changing existing .env values.`);
+}
+NODE
+}
+
 validate_environment() {
   node --input-type=module <<'NODE'
 import fs from 'node:fs';
@@ -359,6 +378,7 @@ ensure_corepack_and_pnpm
 ensure_docker
 install_dependencies
 create_env
+sync_optional_emoji_defaults
 validate_environment
 build_project
 start_dependencies

@@ -6,12 +6,12 @@ import { Ui } from '../../src/ui/ui.js';
 describe('BLE application emoji registry', () => {
   it('renders a configured application emoji in Discord format', () => {
     const registry = new EmojiRegistry({
-      BLE_EMOJI_TICKET: '828044ticket:1526337271635247124',
+      BLE_EMOJI_TICKET_PANEL: '828044ticket:1526337271635247124',
       BLE_EMOJI_MEMBER: '82382member:1526337279881384177'
     });
 
-    expect(registry.format('ticket')).toBe('<:828044ticket:1526337271635247124>');
-    expect(registry.component('ticket')).toEqual({
+    expect(registry.format('ticketPanel')).toBe('<:828044ticket:1526337271635247124>');
+    expect(registry.component('ticketPanel')).toEqual({
       id: '1526337271635247124',
       name: '828044ticket',
       animated: false
@@ -20,7 +20,7 @@ describe('BLE application emoji registry', () => {
   });
 
   it('uses text-only controls when an emoji is missing or invalid', () => {
-    const registry = new EmojiRegistry({ BLE_EMOJI_TICKET: 'invalid emoji value' });
+    const registry = new EmojiRegistry({ BLE_EMOJI_TICKET_PANEL: 'invalid emoji value' });
     const ui = new Ui(registry);
     const panel = ui.ticketPanel({
       id: 'panel-id',
@@ -30,8 +30,8 @@ describe('BLE application emoji registry', () => {
       enabled: true
     });
 
-    expect(registry.format('ticket')).toBeUndefined();
-    expect(registry.status().find((status) => status.key === 'ticket')).toMatchObject({
+    expect(registry.format('ticketPanel')).toBeUndefined();
+    expect(registry.status().find((status) => status.key === 'ticketPanel')).toMatchObject({
       configured: false,
       valid: false
     });
