@@ -1,0 +1,8 @@
+allowBuilds:
+  esbuild: true
+  msgpackr-extract: true
+onlyBuiltDependencies:
+  - esbuild
+  - msgpackr-extract
+overrides:
+  undici: 6.27.0

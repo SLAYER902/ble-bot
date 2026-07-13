@@ -1,0 +1,19 @@
+server:
+  port: 2333
+  address: 0.0.0.0
+lavalink:
+  server:
+    password: ${LAVALINK_SERVER_PASSWORD}
+    sources:
+      youtube: false
+      soundcloud: false
+      bandcamp: false
+      twitch: false
+      vimeo: false
+      http: true
+metrics:
+  prometheus:
+    enabled: true
+logging:
+  level:
+    root: INFO
