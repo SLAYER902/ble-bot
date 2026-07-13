@@ -27,22 +27,22 @@ export class Ui {
   }
 
   public success(title: string, description: string): EmbedBuilder {
-    return this.embed('success', title, description);
+    return this.embed('success', this.labeled(title, 'success'), description);
   }
   public error(title: string, description: string): EmbedBuilder {
-    return this.embed('error', title, description);
+    return this.embed('error', this.labeled(title, 'error'), description);
   }
   public warning(title: string, description: string): EmbedBuilder {
-    return this.embed('warning', title, description);
+    return this.embed('warning', this.labeled(title, 'warning'), description);
   }
   public info(title: string, description: string): EmbedBuilder {
-    return this.embed('info', title, description);
+    return this.embed('info', this.labeled(title, 'information'), description);
   }
   public incident(title: string, description: string): EmbedBuilder {
-    return this.embed('security', title, description);
+    return this.embed('security', this.labeled(title, 'security'), description);
   }
   public diagnostics(title: string, description: string): EmbedBuilder {
-    return this.embed('info', title, description);
+    return this.embed('info', this.labeled(title, 'settings'), description);
   }
 
   public confirmation(

@@ -160,8 +160,9 @@ export const createModerationCommand = (
     }
     await interaction.reply({
       embeds: [
-        ui.success(
-          'Moderation case created',
+        ui.embed(
+          'success',
+          ui.labeled('Moderation case created', 'moderation'),
           `Case: ${result.id}\nAction: ${result.action}\nTarget: ${target.id}\nReason: ${result.reason}`
         )
       ],

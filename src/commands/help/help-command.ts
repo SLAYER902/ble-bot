@@ -20,7 +20,7 @@ const documentationLinks = [
   {
     label: 'Documentation',
     url: 'https://github.com/SLAYER902/ble-bot#readme',
-    emoji: 'information'
+    emoji: 'documentation'
   },
   {
     label: 'Security model',
@@ -82,7 +82,7 @@ export const createHelpCommand = (registry: CommandRegistry, ui: Ui): Command =>
     if (selected) {
       const metadata = selected.metadata;
       const embed = ui
-        .info(`/${metadata.name}`, metadata.longDescription)
+        .embed('info', ui.labeled(`/${metadata.name}`, 'information'), metadata.longDescription)
         .addFields(
           {
             name: 'Try it',
@@ -123,8 +123,9 @@ export const createHelpCommand = (registry: CommandRegistry, ui: Ui): Command =>
         inline: false
       }));
     const embed = ui
-      .info(
-        'BLE command center',
+      .embed(
+        'info',
+        ui.labeled('BLE command center', 'settings'),
         `**${commands.length} command families, built for safe server operations.**\n\nStart with \`/setup start\` to create a saved server plan, or open a focused guide with \`/help command:<family>\`.`
       )
       .addFields(fields)

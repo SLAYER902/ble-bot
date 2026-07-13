@@ -48,8 +48,9 @@ export const createDeveloperCommand = (emojis: EmojiRegistry, ui: Ui): Command =
       const missing = status.filter((entry) => !entry.configured).map((entry) => entry.key);
       await interaction.reply({
         embeds: [
-          ui.diagnostics(
-            'BLE application emoji status',
+          ui.embed(
+            'info',
+            ui.labeled('BLE application emoji status', 'developer'),
             `Available: ${configured}\nMissing configuration: ${missing.join(', ') || 'None'}\nInvalid configuration: ${invalid.join(', ') || 'None'}`
           )
         ],
@@ -59,8 +60,9 @@ export const createDeveloperCommand = (emojis: EmojiRegistry, ui: Ui): Command =
     }
     await interaction.reply({
       embeds: [
-        ui.info(
-          'BLE Bot developer status',
+        ui.embed(
+          'info',
+          ui.labeled('BLE Bot developer status', 'owner'),
           `Connected guilds: ${interaction.client.guilds.cache.size}\nGateway ping: ${interaction.client.ws.ping} ms.`
         )
       ],

@@ -55,23 +55,24 @@ export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
     if (subcommand === 'start') {
       const progress = await service.start(interaction.guild.id, interaction.guild.name);
       const embed = ui
-        .info(
-          'Setup workspace created',
+        .embed(
+          'info',
+          ui.labeled('Setup workspace created', 'guide'),
           `Your configuration is saved and can be resumed at any time. **Step ${progress.step} of 17** is now active.`
         )
         .addFields(
           {
-            name: '01 — Verify the baseline',
+            name: ui.labeled('01 — Verify the baseline', 'staff'),
             value: 'Run `/setup diagnostics` to confirm permissions and role hierarchy.',
             inline: false
           },
           {
-            name: '02 — Set your security posture',
+            name: ui.labeled('02 — Set your security posture', 'shield'),
             value: 'Use `/security status` to review protection before enabling safeguards.',
             inline: false
           },
           {
-            name: '03 — Prepare recovery',
+            name: ui.labeled('03 — Prepare recovery', 'backup'),
             value: 'Use `/backup create` after configuration to capture a safe baseline.',
             inline: false
           }
@@ -91,7 +92,7 @@ export const createSetupCommand = (service: SetupService, ui: Ui): Command => ({
           ? 'No saved setup exists for this server yet. Start when you are ready to configure BLE.'
           : `Your saved configuration is active. **Step ${progress.step} of 17** is the current checkpoint.`;
       const embed = ui
-        .diagnostics('Setup progress', description)
+        .embed('info', ui.labeled('Setup progress', 'settings'), description)
         .addFields(
           {
             name: 'Workspace state',

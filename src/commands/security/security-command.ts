@@ -91,11 +91,16 @@ export const createSecurityCommand = (repository: SecurityPersistence, ui: Ui): 
       await interaction.reply({
         embeds: [
           incident
-            ? ui.incident(
-                'BLE Shield incident',
+            ? ui.embed(
+                'security',
+                ui.labeled('BLE Shield incident', 'security'),
                 `Incident: ${incident.publicId}\nRisk: ${incident.riskScore}\nState: ${incident.securityState}\nConfidence: ${incident.confidence}`
               )
-            : ui.info('BLE Shield incident', 'There is no open security incident for this server.')
+            : ui.embed(
+                'security',
+                ui.labeled('BLE Shield incident', 'shield'),
+                'There is no open security incident for this server.'
+              )
         ],
         ephemeral: true
       });
@@ -108,8 +113,9 @@ export const createSecurityCommand = (repository: SecurityPersistence, ui: Ui): 
       : 'BLE Bot member data is not available yet.';
     await interaction.reply({
       embeds: [
-        ui.diagnostics(
-          'BLE Shield status',
+        ui.embed(
+          'security',
+          ui.labeled('BLE Shield status', 'shield'),
           `Enabled: ${policy.enabled ? 'Yes' : 'No'}\nMode: ${policy.mode}\nState: ${policy.state}\nThresholds: alert ${policy.thresholds.observe}, contain ${policy.thresholds.contain}, emergency ${policy.thresholds.emergency}\n\n${hierarchy}`
         )
       ],
